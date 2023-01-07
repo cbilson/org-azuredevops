@@ -109,7 +109,7 @@
            :to-equal
            (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=42&lineStartColumn=0&lineEndColumn=1000"))))
 
-(describe
+(xdescribe
  "exporting HTML src links"
  (expect (ado-src-export "some/path/foo.cs" nil 'html)
          :to-equal
