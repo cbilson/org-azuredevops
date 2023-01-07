@@ -112,6 +112,13 @@
 (xdescribe
  "exporting HTML src links"
  (expect (ado-src-export "some/path/foo.cs" nil 'html)
+         :to-match
+         (concat "<a target=\"_blank\""
+                 "href=\"https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs\">")))
+
+(xdescribe
+ "exporting HTML src links"
+ (expect (ado-src-export "some/path/foo.cs" nil 'html)
          :to-equal
          (concat "<a target=\"_blank\" "
                  "href=\"https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs\">"
