@@ -51,11 +51,24 @@
         (line-number . ,(match-string 3 link))
         (line-end . ,(match-string 4 link))))
 
+     ;; devops-src:path/to/some/file.cs:L42-53
+     ((string-match (rx ado-path-and-line-range) link)
+      `((repo . ,org-azuredevops-default-repo)
+        (path . ,(match-string 1 link))
+        (line-number . ,(match-string 2 link))
+        (line-end . ,(match-string 3 link))))
+
      ;; devops-src:Some-Repo:path/to/some/file.cs:L42
      ((string-match (rx ado-repo-with-single-line) link)
       `((repo . ,(match-string 1 link))
         (path . ,(match-string 2 link))
         (line-number . ,(match-string 3 link))))
+
+     ;; devops-src:path/to/some/file.cs:L42
+     ((string-match (rx ado-path-and-single-line) link)
+      `((repo . ,org-azuredevops-default-repo)
+        (path . ,(match-string 1 link))
+        (line-number . ,(match-string 2 link))))
 
      ;; devops-src:Some-Repo:path/to/some/file.cs
      ((string-match (rx ado-repo-and-path) link)
@@ -94,13 +107,13 @@ which links to a file in repository <repo>."
         (`ascii (format "%s (%s)" description href))
         (_ href)))))
 
-(defun org-azdevops-src-command (path)
+(defun ado-src-command (path)
   "Open an AzDevops src link PATH in the browser."
   (let ((url (ado-src-link-to-url path)))
     (message "Opening browser to: %s" url)
     (browse-url url)))
 
-(org-link-set-parameters "devops-src" :follow #'org-azdevops-src-command :export #'ado-src-export)
+(org-link-set-parameters "devops-src" :follow #'ado-src-command :export #'ado-src-export)
 
 ;; -----------------------------------------------------------------------------
 ;; Work Item Links

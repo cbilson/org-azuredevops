@@ -19,76 +19,115 @@
     (match-string group str)))
 
 (describe
- "grammar for devops-src: path only links"
+ "link grammar"
 
  (describe
-  "- path only links"
+  "path only links"
   (let ((expr (rx ado-path-only)))
-    (it "- match a path"
+    (it "matches"
         (expect "src/Foo/Bar.cs" :to-match expr))
-    (it "- capture the path"
+    (it "captures components"
         (expect (-extract expr "src/Foo/Bar.cs" 1) :to-equal "src/Foo/Bar.cs"))))
 
  (describe
-  "- repo:path links"
+  "repo:path links"
   (let ((expr (rx ado-repo-and-path)))
-    (it "- match a repo:path"
+    (it "matches"
         (expect "Some-Repo:some/path" :to-match expr))
-    (it "- ignores simpler link types"
+    (it "ignores simpler link types"
         (expect "some/path" :not :to-match expr))
-    (it "- captures the repo"
-        (expect (-extract expr "Some-Repo:some/path" 1) :to-equal "Some-Repo"))
-    (it "- captures the path"
+    (it "captures components"
+        (expect (-extract expr "Some-Repo:some/path" 1) :to-equal "Some-Repo")
         (expect (-extract expr "Some-Repo:some/path" 2) :to-equal "some/path"))))
 
  (describe
-  "- repo:path:Ln links"
+  "path:Ln links"
+  (let ((expr (rx ado-path-and-single-line)))
+    (it "matches"
+        (expect "src/Foo/Bar.cs:L42" :to-match expr))
+    (it "ignores simpler link types"
+        (expect "some/path" :not :to-match expr))
+    (it "captures components"
+        (expect (-extract expr "src/Foo/Bar.cs:L42" 1) :to-equal "src/Foo/Bar.cs")
+        (expect (-extract expr "src/Foo/Bar.cs:L42" 2) :to-equal "42"))))
+
+ (describe
+  "repo:path:Ln links"
   (let ((expr (rx ado-repo-with-single-line)))
-    (it "- match a repo:path:Ln link"
+    (it "matches"
         (expect "Some-Repo:some/path:L42" :to-match expr))
-    (it "- ignores simpler link types"
+    (it "ignores simpler link types"
         (expect "some/path" :not :to-match expr)
         (expect "Some-Repo:some/path" :not :to-match expr))
-    (it "- captures the link comonents"
+    (it "captures components"
         (expect (-extract expr "Some-Repo:some/path:L42" 1) :to-equal "Some-Repo")
         (expect (-extract expr "Some-Repo:some/path:L42" 2) :to-equal "some/path")
-        (expect (-extract expr "Some-Repo:some-path:L42" 3) :to-equal "42")))))
+        (expect (-extract expr "Some-Repo:some-path:L42" 3) :to-equal "42"))))
 
-(describe
- "- repo:path:Ln-m links"
- (let ((expr (rx ado-repo-with-line-range)))
-   (it "- match a repo:path:Ln link"
-       (expect "Some-Repo:some/path:L42-53" :to-match expr))
-   (it "- ignores simpler link types"
-       (expect "some/path" :not :to-match expr)
-       (expect "Some-Repo:some/path" :not :to-match expr)
-       (expect "Some-Repo:some/path:L42" :not :to-match expr))
-   (it "- captures the link comonents"
-       (expect (-extract expr "Some-Repo:some/path:L42-53" 1) :to-equal "Some-Repo")
-       (expect (-extract expr "Some-Repo:some/path:L42-53" 2) :to-equal "some/path")
-       (expect (-extract expr "Some-Repo:some-path:L42-53" 3) :to-equal "42"))))
+ (describe
+  "path:Ln-m links"
+  (let ((expr (rx ado-path-and-line-range)))
+    (it "matches"
+        (expect "some/path:L42-53" :to-match expr))
+    (it "ignores simpler link types"
+        (expect "some/path" :not :to-match expr)
+        (expect "some/path:L42" :not :to-match expr)
+        (expect "Some-Repo:some/path" :not :to-match expr))
+    (it "captures components"
+        (expect (-extract expr "some/path:L42-53" 1) :to-equal "some/path")
+        (expect (-extract expr "some-path:L42-53" 2) :to-equal "42")
+        (expect (-extract expr "some-path:L42-53" 3) :to-equal "53"))))
+
+ (describe
+  "repo:path:Ln-m links"
+  (let ((expr (rx ado-repo-with-line-range)))
+    (it "matches"
+        (expect "Some-Repo:some/path:L42-53" :to-match expr))
+    (it "ignores simpler link types"
+        (expect "some/path" :not :to-match expr)
+        (expect "some/path:L42" :not :to-match expr)
+        (expect "some/path:L42-53" :not :to-match expr)
+        (expect "Some-Repo:some/path" :not :to-match expr)
+        (expect "Some-Repo:some/path:L42" :not :to-match expr))
+    (it "captures components"
+        (expect (-extract expr "Some-Repo:some/path:L42-53" 1) :to-equal "Some-Repo")
+        (expect (-extract expr "Some-Repo:some/path:L42-53" 2) :to-equal "some/path")
+        (expect (-extract expr "Some-Repo:some-path:L42-53" 3) :to-equal "42")
+        (expect (-extract expr "Some-Repo:some-path:L42-53" 4) :to-equal "53")))))
 
 (describe
  "syntax tree"
- (it "- parse path-only link"
+ (it "parse path-only link"
      (let-alist (ado-parse-src-link "some/path/foo.cs")
        (expect .repo :to-equal org-azuredevops-default-repo)
        (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-be nil)
        (expect .line-end :to-equal nil)))
- (it "- parse repo:path links"
+ (it "parse repo:path links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs")
        (expect .repo :to-equal "Some-Repo")
        (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-be nil)
        (expect .line-end :to-equal nil)))
- (it "- parse repo:path:Ln links"
+ (it "parse path:Ln links"
+     (let-alist (ado-parse-src-link "some/path/foo.cs:L42")
+       (expect .repo :to-equal org-azuredevops-default-repo)
+       (expect .path :to-equal "some/path/foo.cs")
+       (expect .line-number :to-equal "42")
+       (expect .line-end :to-equal nil)))
+ (it "parse repo:path:Ln links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs:L42")
        (expect .repo :to-equal "Some-Repo")
        (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-equal "42")
        (expect .line-end :to-equal nil)))
- (it "- parse repo:path:Ln-m links"
+ (it "parse path:Ln-m links"
+     (let-alist (ado-parse-src-link "some/path/foo.cs:L42-53")
+       (expect .repo :to-equal org-azuredevops-default-repo)
+       (expect .path :to-equal "some/path/foo.cs")
+       (expect .line-number :to-equal "42")
+       (expect .line-end :to-equal "53")))
+ (it "parse repo:path:Ln-m links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs:L42-53")
        (expect .repo :to-equal "Some-Repo")
        (expect .path :to-equal "some/path/foo.cs")
@@ -98,19 +137,30 @@
 (describe
  "generating urls"
  (let ((prefix "https://dev.azure.com/msazure/One/_git/"))
-   (expect (ado-src-link-to-url "some/path/foo.cs")
-           :to-equal (concat prefix "Azure-Compute?path=/some/path/foo.cs"))
-   (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs")
-           :to-equal (concat prefix "Some-Repo?path=/some/path/foo.cs"))
-   (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs:L23")
-           :to-equal
-           (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=23&lineStartColumn=0&lineEndColumn=1000"))
-   (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs:L23-42")
-           :to-equal
-           (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=42&lineStartColumn=0&lineEndColumn=1000"))))
-
-(message (ado-src-export "some/path/foo.cs" nil 'html))
-
+   (it "generates path-only links"
+       (expect (ado-src-link-to-url "some/path/foo.cs")
+               :to-equal
+               (concat prefix "Azure-Compute?path=/some/path/foo.cs")))
+   (it "generates repo:path links"
+       (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs")
+               :to-equal
+               (concat prefix "Some-Repo?path=/some/path/foo.cs")))
+   (it "generates path:Ln links"
+       (expect (ado-src-link-to-url "some/path/foo.cs:L23")
+               :to-equal
+               (concat prefix "Azure-Compute?path=/some/path/foo.cs&line=23&lineEnd=23&lineStartColumn=0&lineEndColumn=1000")))
+   (it "generates repo:path:Ln links"
+       (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs:L23")
+               :to-equal
+               (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=23&lineStartColumn=0&lineEndColumn=1000")))
+   (it "generates path:Ln-m links"
+       (expect (ado-src-link-to-url "some/path/foo.cs:L23-42")
+               :to-equal
+               (concat prefix "Azure-Compute?path=/some/path/foo.cs&line=23&lineEnd=42&lineStartColumn=0&lineEndColumn=1000")))
+   (it "generates repo:path:Ln-m links"
+       (expect (ado-src-link-to-url "Some-Repo:some/path/foo.cs:L23-42")
+               :to-equal
+               (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=42&lineStartColumn=0&lineEndColumn=1000")))))
 
 (describe
  "exporting HTML src links"
@@ -133,13 +183,21 @@
                      "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
                      "&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000\">"
                      "Some-Repo:/some/path/foo.cs</a>")))
- (xit "for repo:path:Ln-m links"
+ (it "for repo:path:Ln-m links"
      (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'html)
              :to-equal
              (concat "<a target=\"_blank\" "
                      "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
                      "&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000\">"
                      "Some-Repo:/some/path/foo.cs</a>"))))
+
+(describe
+ "opening links in a browser"
+ (before-each (spy-on 'browse-url))
+ (it "opens the browser for src links"
+     (expect (ado-src-command "some/path/foo.cs") :not :to-throw)
+     (expect 'browse-url :to-have-been-called-with
+             "https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs")))
 
 ;; Local Variables:
 ;; read-symbol-shorthands: (("ado-" . "org-azuredevops--"))
