@@ -72,26 +72,26 @@
  "syntax tree"
  (it "- parse path-only link"
      (let-alist (ado-parse-src-link "some/path/foo.cs")
-       (expect .path :to-equal "some/path/foo.cs")
        (expect .repo :to-equal org-azuredevops-default-repo)
+       (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-be nil)
        (expect .line-end :to-equal nil)))
  (it "- parse repo:path links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs")
-       (expect .path :to-equal "some/path/foo.cs")
        (expect .repo :to-equal "Some-Repo")
+       (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-be nil)
        (expect .line-end :to-equal nil)))
  (it "- parse repo:path:Ln links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs:L42")
-       (expect .path :to-equal "some/path/foo.cs")
        (expect .repo :to-equal "Some-Repo")
+       (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-equal "42")
        (expect .line-end :to-equal nil)))
  (it "- parse repo:path:Ln-m links"
      (let-alist (ado-parse-src-link "Some-Repo:some/path/foo.cs:L42-53")
-       (expect .path :to-equal "some/path/foo.cs")
        (expect .repo :to-equal "Some-Repo")
+       (expect .path :to-equal "some/path/foo.cs")
        (expect .line-number :to-equal "42")
        (expect .line-end :to-equal "53"))))
 
@@ -109,37 +109,37 @@
            :to-equal
            (concat prefix "Some-Repo?path=/some/path/foo.cs&line=23&lineEnd=42&lineStartColumn=0&lineEndColumn=1000"))))
 
-(xdescribe
- "exporting HTML src links"
- (expect (ado-src-export "some/path/foo.cs" nil 'html)
-         :to-match
-         (concat "<a target=\"_blank\""
-                 "href=\"https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs\">")))
+(message (ado-src-export "some/path/foo.cs" nil 'html))
 
-(xdescribe
+
+(describe
  "exporting HTML src links"
- (expect (ado-src-export "some/path/foo.cs" nil 'html)
-         :to-equal
-         (concat "<a target=\"_blank\" "
-                 "href=\"https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs\">"
-                 "Azure-Compute:/some/path/foo.cs</a>"))
- (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'html)
-         :to-equal
-         (concat "<a target=\"_blank\" "
-                 "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs\">"
-                 "Azure-Compute:/some/path/foo.cs</a>"))
- (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'html)
-         :to-equal
-         (concat "<a target=\"_blank\" "
-                 "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
-                 "&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000\">"
-                 "Azure-Compute:/some/path/foo.cs</a>"))
- (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'html)
-         :to-equal
-         (concat "<a target=\"_blank\" "
-                 "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
-                 "&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000\">"
-                 "Azure-Compute:/some/path/foo.cs</a>")))
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'html)
+             :to-equal
+             (concat "<a target=\"_blank\" "
+                     "href=\"https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs\">"
+                     "Azure-Compute:/some/path/foo.cs</a>")))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'html)
+             :to-equal
+             (concat "<a target=\"_blank\" "
+                     "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs\">"
+                     "Some-Repo:/some/path/foo.cs</a>")))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'html)
+             :to-equal
+             (concat "<a target=\"_blank\" "
+                     "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
+                     "&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000\">"
+                     "Some-Repo:/some/path/foo.cs</a>")))
+ (xit "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'html)
+             :to-equal
+             (concat "<a target=\"_blank\" "
+                     "href=\"https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs"
+                     "&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000\">"
+                     "Some-Repo:/some/path/foo.cs</a>"))))
 
 ;; Local Variables:
 ;; read-symbol-shorthands: (("ado-" . "org-azuredevops--"))

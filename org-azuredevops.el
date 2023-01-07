@@ -86,7 +86,7 @@ which links to a file in repository <repo>."
   "Export an AzDevops src link PATH with DESCRIPTION to FORMAT."
   (let-alist (ado-parse-src-link path)
     (let* ((href (ado-src-link-to-url path))
-           (description (concat .repo ":/" .path)))
+           (description (or description (concat .repo ":/" .path))))
       (pcase format
         (`html (format "<a target=\"_blank\" href=\"%s\">%s</a>" href description))
         (`latex (format "\\href{%s}{%s}" href description))
