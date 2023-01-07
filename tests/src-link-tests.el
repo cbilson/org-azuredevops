@@ -1,5 +1,4 @@
-;;; tests for Azure DevOps link parsing  -*- lexical-binding: t -*-
-
+;;; tests for Azure DevOps source code links  -*- lexical-binding: t -*-
 (require 'buttercup)
 (require 'org-azuredevops)
 
@@ -20,7 +19,6 @@
 
 (describe
  "link grammar"
-
  (describe
   "path only links"
   (let ((expr (rx ado-path-only)))

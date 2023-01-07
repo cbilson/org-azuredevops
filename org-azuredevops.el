@@ -43,42 +43,42 @@
 (rx-define ado-repo-with-line-range  (seq bol (group ado-repo-name) ?: (group ado-path) ?: ado-line-range eol))
 
 (defun ado-parse-src-link (link)
-    (cond
-     ;; devops-src:Some-Repo:path/to/some/file.cs:L42-53
-     ((string-match (rx ado-repo-with-line-range) link)
-      `((repo . ,(match-string 1 link))
-        (path . ,(match-string 2 link))
-        (line-number . ,(match-string 3 link))
-        (line-end . ,(match-string 4 link))))
+  (cond
+   ;; devops-src:Some-Repo:path/to/some/file.cs:L42-53
+   ((string-match (rx ado-repo-with-line-range) link)
+    `((repo . ,(match-string 1 link))
+      (path . ,(match-string 2 link))
+      (line-number . ,(match-string 3 link))
+      (line-end . ,(match-string 4 link))))
 
-     ;; devops-src:path/to/some/file.cs:L42-53
-     ((string-match (rx ado-path-and-line-range) link)
-      `((repo . ,org-azuredevops-default-repo)
-        (path . ,(match-string 1 link))
-        (line-number . ,(match-string 2 link))
-        (line-end . ,(match-string 3 link))))
+   ;; devops-src:path/to/some/file.cs:L42-53
+   ((string-match (rx ado-path-and-line-range) link)
+    `((repo . ,org-azuredevops-default-repo)
+      (path . ,(match-string 1 link))
+      (line-number . ,(match-string 2 link))
+      (line-end . ,(match-string 3 link))))
 
-     ;; devops-src:Some-Repo:path/to/some/file.cs:L42
-     ((string-match (rx ado-repo-with-single-line) link)
-      `((repo . ,(match-string 1 link))
-        (path . ,(match-string 2 link))
-        (line-number . ,(match-string 3 link))))
+   ;; devops-src:Some-Repo:path/to/some/file.cs:L42
+   ((string-match (rx ado-repo-with-single-line) link)
+    `((repo . ,(match-string 1 link))
+      (path . ,(match-string 2 link))
+      (line-number . ,(match-string 3 link))))
 
-     ;; devops-src:path/to/some/file.cs:L42
-     ((string-match (rx ado-path-and-single-line) link)
-      `((repo . ,org-azuredevops-default-repo)
-        (path . ,(match-string 1 link))
-        (line-number . ,(match-string 2 link))))
+   ;; devops-src:path/to/some/file.cs:L42
+   ((string-match (rx ado-path-and-single-line) link)
+    `((repo . ,org-azuredevops-default-repo)
+      (path . ,(match-string 1 link))
+      (line-number . ,(match-string 2 link))))
 
-     ;; devops-src:Some-Repo:path/to/some/file.cs
-     ((string-match (rx ado-repo-and-path) link)
-      `((repo . ,(match-string 1 link))
-        (path . ,(match-string 2 link))))
+   ;; devops-src:Some-Repo:path/to/some/file.cs
+   ((string-match (rx ado-repo-and-path) link)
+    `((repo . ,(match-string 1 link))
+      (path . ,(match-string 2 link))))
 
-     ;; devops-src:path/to/some/file.cs
-     ((string-match (rx ado-path-only) link)
-      `((repo . ,org-azuredevops-default-repo)
-        (path . ,(match-string 1 link))))))
+   ;; devops-src:path/to/some/file.cs
+   ((string-match (rx ado-path-only) link)
+    `((repo . ,org-azuredevops-default-repo)
+      (path . ,(match-string 1 link))))))
 
 (defun ado-src-link-to-url (path)
   "Expand a Azure-Compute source code link PATH into a URL in AzDevops.
@@ -116,50 +116,52 @@ which links to a file in repository <repo>."
 (org-link-set-parameters "devops-src" :follow #'ado-src-command :export #'ado-src-export)
 
 ;; -----------------------------------------------------------------------------
-;; Work Item Links
+;; Work Item Links  <workitem-type|workitem>:<id>
 ;; -----------------------------------------------------------------------------
 
-(defun org-azdevops-workitem-link-to-url (path)
+(defun ado-workitem-url (path &optional org host)
   "Expand a work item link PATH into a URL in AzDevops."
-  (concat "https://" org-azuredevops-host "/" org-azuredevops-organization "/_workitems/edit/" path))
+  (let ((org (or org org-azuredevops-organization))
+        (host (or org-azuredevops-host)))
+    (concat "https://" host "/" org "/_workitems/edit/" path)))
 
-(defun org-azdevops-workitem-command (path)
+(defun org-azdevops-workitem-command (path &optional org host)
   "Open an AzDevops work-item link to the work item PATH in the browser."
-  (browse-url (org-azdevops-workitem-link-to-url path)))
+  (browse-url (ado-workitem-url path org host)))
 
 (defun org-azdevops-workitem-export (id description format)
   "Export an AzDevops Work Item link ID with DESCRIPTION to FORMAT."
-  (ado-export "Work Item" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "Work Item" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "workitem" :follow #'org-azdevops-workitem-command :export #'org-azdevops-workitem-export)
 
 (defun org-azdevops-epic-export (id description format)
   "Export an AzDevops Epic link ID with DESCRIPTION to FORMAT."
-  (ado-export "Epic" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "Epic" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "epic" :follow #'org-azdevops-workitem-command :export #'org-azdevops-epic-export)
 
 (defun org-azdevops-feature-export (id description format)
   "Export an AzDevops Feature link ID with DESCRIPTION to FORMAT."
-  (ado-export "Feature" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "Feature" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "feature" :follow #'org-azdevops-workitem-command :export #'org-azdevops-feature-export)
 
 (defun org-azdevops-pbi-export (id description format)
   "Export an AzDevops PBI link ID with DESCRIPTION to FORMAT."
-  (ado-export "PBI" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "PBI" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "pbi" :follow #'org-azdevops-workitem-command :export #'org-azdevops-pbi-export)
 
 (defun org-azdevops-task-export (id description format)
   "Export an AzDevops Task link ID with DESCRIPTION to FORMAT."
-  (ado-export "Task" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "Task" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "task" :follow #'org-azdevops-workitem-command :export #'org-azdevops-task-export)
 
 (defun org-azdevops-bug-export (id description format)
   "Export an AzDevops Bug link ID with DESCRIPTION to FORMAT."
-  (ado-export "Bug" id 'org-azdevops-workitem-link-to-url description format))
+  (ado-export "Bug" id 'ado-workitem-url description format))
 
 (org-link-set-parameters "bug" :follow #'org-azdevops-workitem-command :export #'org-azdevops-bug-export)
 
