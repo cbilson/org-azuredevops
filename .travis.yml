@@ -1,0 +1,11 @@
+language: nix
+
+env:
+  - EMACS_CI=emacs-28-.1
+
+install:
+  - bash <(curl https://raw.githubusercontent.com/purcell/nix-emacs-ci/master/travis-install)
+  - curl -fsSL https://raw.github.com/doublep/eldev/master/webinstall/travis-eldev > x.sh && source ./x.sh
+
+script:
+  - eldev -p -dtT test
