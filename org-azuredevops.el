@@ -213,6 +213,13 @@ which links to PR #<number> in repository <repo>."
 
 (org-link-set-parameters "pr" :follow #'org-azdevops-pr-command :export #'org-azdevops-pr-export)
 
+(defun org-azdevops-pullrequest-title-to-link (title)
+  "Given an AzureDevOps Pull Request TITLE (the 'copy' button to the right of the title on the
+pull request view), create a pr: link, preserving the title."
+  (if (string-match "^Pull Request \\([[:digit:]]+\\): \\(.*\\)$" title)
+      (concat "pr:" (match-string 1 title) ": " (match-string 2 title))
+    title))
+
 ;; Release links
 (defun org-azdevops-release-command (path)
   "Open an AzDevops release link to the work item PATH in the browser."
