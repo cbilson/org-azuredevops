@@ -190,6 +190,101 @@
                      "Some-Repo:/some/path/foo.cs</a>"))))
 
 (describe
+ "exporting latex src links"
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'latex)
+             :to-equal
+	     "\\href{https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs}{Azure-Compute:/some/path/foo.cs}"))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'latex)
+             :to-equal
+	     "\\href{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs}{Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'latex)
+             :to-equal
+	     "\\href{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000}{Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'latex)
+             :to-equal
+	     "\\href{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000}{Some-Repo:/some/path/foo.cs}")))
+
+(describe
+ "exporting texinfo src links"
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs,Azure-Compute:/some/path/foo.cs}"))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs,Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000,Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000,Some-Repo:/some/path/foo.cs}")))
+
+(describe
+ "exporting texinfo src links"
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs,Azure-Compute:/some/path/foo.cs}"))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs,Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000,Some-Repo:/some/path/foo.cs}"))
+ (it "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'texinfo)
+             :to-equal
+	     "@uref{https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000,Some-Repo:/some/path/foo.cs}")))
+
+(describe
+ "exporting ascii src links"
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'ascii)
+             :to-equal
+	     "Azure-Compute:/some/path/foo.cs (https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs)"))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'ascii)
+             :to-equal
+	     "Some-Repo:/some/path/foo.cs (https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs)"))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'ascii)
+             :to-equal
+	     "Some-Repo:/some/path/foo.cs (https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000)"))
+ (it "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'ascii)
+             :to-equal
+	     "Some-Repo:/some/path/foo.cs (https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000)")))
+
+(describe
+ "exporting Markdown src links"
+ (it "for path only links"
+     (expect (ado-src-export "some/path/foo.cs" nil 'md)
+             :to-equal
+	     "[Azure-Compute:/some/path/foo.cs](https://dev.azure.com/msazure/One/_git/Azure-Compute?path=/some/path/foo.cs)"))
+ (it "for repo:path links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs" nil 'md)
+             :to-equal
+	     "[Some-Repo:/some/path/foo.cs](https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs)"))
+ (it "for repo:path:Ln links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42" nil 'md)
+             :to-equal
+	     "[Some-Repo:/some/path/foo.cs](https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=42&lineStartColumn=0&lineEndColumn=1000)"))
+ (it "for repo:path:Ln-m links"
+     (expect (ado-src-export "Some-Repo:some/path/foo.cs:L42-53" nil 'md)
+             :to-equal
+	     "[Some-Repo:/some/path/foo.cs](https://dev.azure.com/msazure/One/_git/Some-Repo?path=/some/path/foo.cs&line=42&lineEnd=53&lineStartColumn=0&lineEndColumn=1000)")))
+
+(describe
  "opening links in a browser"
  (before-each (spy-on 'browse-url))
  (it "opens the browser for src links"

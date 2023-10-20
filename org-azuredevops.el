@@ -41,6 +41,7 @@ with DESCRIPTION from an Org file for FORMAT."
       (`latex (format "\\href{%s}{%s}" href description))
       (`texinfo (format "@uref{%s,%s}" href description))
       (`ascii (format "%s (%s)" description href))
+      (`md (format "[%s](%s)" description href))
       (_ href))))
 
 ;; -----------------------------------------------------------------------------
@@ -122,6 +123,7 @@ which links to a file in repository <repo>."
         (`latex (format "\\href{%s}{%s}" href description))
         (`texinfo (format "@uref{%s,%s}" href description))
         (`ascii (format "%s (%s)" description href))
+	(`md (format "[%s](%s)" description href))
         (_ href)))))
 
 (defun ado-src-command (path)
