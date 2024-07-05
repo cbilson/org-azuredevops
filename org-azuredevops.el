@@ -141,7 +141,7 @@ which links to a file in repository <repo>."
 (defun ado-workitem-url (path &optional org host)
   "Expand a work item link PATH into a URL in AzDevops."
   (let ((org (or org org-azuredevops-organization))
-        (host (or org-azuredevops-host)))
+        (host (or host org-azuredevops-host)))
     (concat "https://" host "/" org "/_workitems/edit/" path)))
 
 (defun ado-workitem-command (path &optional org host)
@@ -252,8 +252,9 @@ which links to PR #<number> in repository <repo>."
 ;;; Public Functions
 ;;; -----------------------------------------------------------------------------
 (defun org-azuredevops-pullrequest-title-to-link (title)
-  "Given an AzureDevOps Pull Request TITLE (the 'copy' button to the right of the title on the
-pull request view), create a pr: link, preserving the title. Used in pull-request-capture-template.org"
+  "Given an AzureDevOps Pull Request TITLE (the 'copy' button to the
+right of the title on the pull request view), create a pr: link,
+preserving the title. Used in pull-request-capture-template.org" 
   (if (string-match "^Pull Request \\([[:digit:]]+\\): \\(.*\\)$" title)
       (concat "pr:" (match-string 1 title) ": " (match-string 2 title))
     title))
