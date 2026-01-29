@@ -206,21 +206,35 @@ which links to a file in repository <repo>."
 ;; Pull Request links
 (defun ado-pr-link-to-url (path)
   "Expand a Azure-Compute PR link PATH into a URL in AzDevops.
-Links can be in the form of `pr:<number>` which links to
-PR #<number> in the default repo, or `pr:<repo>/<number>`,
-which links to PR #<number> in repository <repo>."
-  (let* ((components
-          (if (string-match (rx line-start
-                                (group (one-or-more (in "A-Za-z0-9-_")))
-                                "/"
-                                (group (one-or-more digit))
-                                line-end)
-                            path)
-              (list (match-string 1 path) (match-string 2 path))
-            (list "Azure-Compute" path)))
-         (repo (car components))
-         (id (nth 1 components)))
-    (concat "https://" org-azuredevops-host "/" org-azuredevops-organization "/_git/" repo "/pullrequest/" id)))
+Links can be in the form of:
+- `pr:<number>` - PR in default org/repo
+- `pr:<repo>/<number>` - PR in default org, specified repo
+- `pr:<org>/<project>/<repo>/<number>` - PR in specified org/project/repo"
+  (let* ((components (split-string path "/"))
+         (num-components (length components))
+         (org (cond
+               ;; 3+ components: org/project.../repo/number
+               ;; Everything except last 2 components is org/project
+               ((>= num-components 3)
+                (mapconcat 'identity (butlast components 2) "/"))
+               ;; 1 component (repo/number) or 0 (just number): use default org
+               (t org-azuredevops-organization)))
+         (repo (cond
+                ;; 3+ components: second-to-last is repo
+                ((>= num-components 3)
+                 (nth (- num-components 2) components))
+                ;; 2 components: first is repo
+                ((= num-components 2)
+                 (car components))
+                ;; 1 component (just number): use default repo
+                (t org-azuredevops-default-repo)))
+         (id (cond
+              ;; 2+ components: last component is PR number
+              ((>= num-components 2)
+               (car (last components)))
+              ;; 1 component: entire path is PR number
+              (t path))))
+    (concat "https://" org-azuredevops-host "/" org "/_git/" repo "/pullrequest/" id)))
 
 (defun ado-pr-command (id)
   "Open an AzDevops PR link to the PR ID in the browser."
