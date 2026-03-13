@@ -34,7 +34,8 @@
 Uses LINK-FN to get a hyperlink, for Work item ID, of type TYPE,
 with DESCRIPTION from an Org file for FORMAT."
   (let* ((type (or type "Work Item"))
-         (description (or description (concat type " #" id)))
+         (display-id (car (last (split-string id ":"))))
+         (description (or description (concat type " #" display-id)))
          (href (funcall link-fn id)))
     (pcase format
       (`html (format "<a target=\"_blank\" href=\"%s\">%s</a>" href description))
@@ -135,14 +136,29 @@ which links to a file in repository <repo>."
 (org-link-set-parameters "devops-src" :follow #'ado-src-command :export #'ado-src-export)
 
 ;; -----------------------------------------------------------------------------
-;; Work Item Links  <workitem-type|workitem>:<id>
+;; Work Item Links  <workitem-type|workitem>:[org/project:]<id>
 ;; -----------------------------------------------------------------------------
 
+(defun ado-parse-workitem-link (path)
+  "Parse a work item link PATH into an alist with `org' and `id'.
+PATH can be a bare numeric ID like \"18469984\" or include an
+org/project prefix like \"msazure/One:18469984\"."
+  (let ((components (split-string path ":")))
+    (if (> (length components) 1)
+        `((org . ,(mapconcat #'identity (butlast components) ":"))
+          (id . ,(car (last components))))
+      `((org . ,org-azuredevops-organization)
+        (id . ,path)))))
+
 (defun ado-workitem-url (path &optional org host)
-  "Expand a work item link PATH into a URL in AzDevops."
-  (let ((org (or org org-azuredevops-organization))
-        (host (or host org-azuredevops-host)))
-    (concat "https://" host "/" org "/_workitems/edit/" path)))
+  "Expand a work item link PATH into a URL in AzDevops.
+PATH can be a bare ID or \"org/project:id\".  Optional ORG and
+HOST override the parsed/default values."
+  (let* ((parsed (ado-parse-workitem-link path))
+         (org (or org (cdr (assq 'org parsed))))
+         (host (or host org-azuredevops-host))
+         (id (cdr (assq 'id parsed))))
+    (concat "https://" host "/" org "/_workitems/edit/" id)))
 
 (defun ado-workitem-command (path &optional org host)
   "Open an AzDevops work-item link to the work item PATH in the browser."
