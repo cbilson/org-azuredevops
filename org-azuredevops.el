@@ -49,7 +49,10 @@ with DESCRIPTION from an Org file for FORMAT."
 ;; Azure-DevOps repo (source code) links.
 ;; -----------------------------------------------------------------------------
 
-(rx-define ado-repo-name    (1+ (or letter digit ?- ?_)))
+;; ado-repo-name matches either a bare repo name (e.g. "Some-Repo") or a
+;; "org/project.../repo" style prefix (e.g. "azureconfig/Gold/Azure-Gold-Config"),
+;; mirroring the org/project/repo support available on `pr:' links.
+(rx-define ado-repo-name    (1+ (or letter digit ?- ?_ ?/)))
 (rx-define ado-path         (1+ (or letter digit ?_ ?/ ?. ?-)))
 (rx-define ado-line-num     (seq ?L (group (1+ digit))))
 (rx-define ado-line-range   (seq ?L (group (1+ digit)) ?- (group (1+ digit))))
@@ -61,58 +64,92 @@ with DESCRIPTION from an Org file for FORMAT."
 (rx-define ado-repo-with-single-line (seq bol (group ado-repo-name) ?: (group ado-path) ?: ado-line-num eol))
 (rx-define ado-repo-with-line-range  (seq bol (group ado-repo-name) ?: (group ado-path) ?: ado-line-range eol))
 
+(defun ado-split-repo-spec (repo-spec)
+  "Split REPO-SPEC into an alist with `org' and `repo'.
+REPO-SPEC can be a bare repo name like \"Some-Repo\", in which case
+`org-azuredevops-organization' is used for org, or it can be a
+\"org/project.../repo\" style path like
+\"azureconfig/Gold/Azure-Gold-Config\", in which case everything but
+the last component is the org, and the last component is the repo."
+  (let ((components (split-string repo-spec "/")))
+    (if (> (length components) 1)
+        `((org . ,(mapconcat #'identity (butlast components) "/"))
+          (repo . ,(car (last components))))
+      `((org . ,org-azuredevops-organization)
+        (repo . ,repo-spec)))))
+
 (defun ado-parse-src-link (link)
   (cond
    ;; devops-src:Some-Repo:path/to/some/file.cs:L42-53
+   ;; devops-src:azureconfig/Gold/Azure-Gold-Config:path/to/some/file.cs:L42-53
    ((string-match (rx ado-repo-with-line-range) link)
-    `((repo . ,(match-string 1 link))
-      (path . ,(match-string 2 link))
-      (line-number . ,(match-string 3 link))
-      (line-end . ,(match-string 4 link))))
+    (let-alist (ado-split-repo-spec (match-string 1 link))
+      `((org . ,.org)
+        (repo . ,.repo)
+        (path . ,(match-string 2 link))
+        (line-number . ,(match-string 3 link))
+        (line-end . ,(match-string 4 link)))))
 
    ;; devops-src:path/to/some/file.cs:L42-53
    ((string-match (rx ado-path-and-line-range) link)
-    `((repo . ,org-azuredevops-default-repo)
+    `((org . ,org-azuredevops-organization)
+      (repo . ,org-azuredevops-default-repo)
       (path . ,(match-string 1 link))
       (line-number . ,(match-string 2 link))
       (line-end . ,(match-string 3 link))))
 
    ;; devops-src:Some-Repo:path/to/some/file.cs:L42
+   ;; devops-src:azureconfig/Gold/Azure-Gold-Config:path/to/some/file.cs:L42
    ((string-match (rx ado-repo-with-single-line) link)
-    `((repo . ,(match-string 1 link))
-      (path . ,(match-string 2 link))
-      (line-number . ,(match-string 3 link))))
+    (let-alist (ado-split-repo-spec (match-string 1 link))
+      `((org . ,.org)
+        (repo . ,.repo)
+        (path . ,(match-string 2 link))
+        (line-number . ,(match-string 3 link)))))
 
    ;; devops-src:path/to/some/file.cs:L42
    ((string-match (rx ado-path-and-single-line) link)
-    `((repo . ,org-azuredevops-default-repo)
+    `((org . ,org-azuredevops-organization)
+      (repo . ,org-azuredevops-default-repo)
       (path . ,(match-string 1 link))
       (line-number . ,(match-string 2 link))))
 
    ;; devops-src:Some-Repo:path/to/some/file.cs
+   ;; devops-src:azureconfig/Gold/Azure-Gold-Config:path/to/some/file.cs
    ((string-match (rx ado-repo-and-path) link)
-    `((repo . ,(match-string 1 link))
-      (path . ,(match-string 2 link))))
+    (let-alist (ado-split-repo-spec (match-string 1 link))
+      `((org . ,.org)
+        (repo . ,.repo)
+        (path . ,(match-string 2 link)))))
 
    ;; devops-src:path/to/some/file.cs
    ((string-match (rx ado-path-only) link)
-    `((repo . ,org-azuredevops-default-repo)
+    `((org . ,org-azuredevops-organization)
+      (repo . ,org-azuredevops-default-repo)
       (path . ,(match-string 1 link))))))
+
+(defun ado-src-escape-path (path)
+  "Escape the `/' characters in PATH, with a leading `/' prepended.
+Used to build a `path=' query parameter value for AzDevops source
+links, e.g. \"src/some/file.cs\" becomes \"%2Fsrc%2Fsome%2Ffile.cs\"."
+  (replace-regexp-in-string "/" "%2F" (concat "/" path)))
 
 (defun ado-src-link-to-url (path)
   "Expand a Azure-Compute source code link PATH into a URL in AzDevops.
-Links can be in the form of `ado-src:<path>` which links to
-a file the default repo, Azure-Compute, or `ado-src:<repo>:<path>`,
-which links to a file in repository <repo>."
+Links can be in the form of `ado-src:<path>' which links to a file
+the default repo, Azure-Compute, `ado-src:<repo>:<path>', which
+links to a file in repository <repo>, or
+`ado-src:<org>/<project>/<repo>:<path>', which links to a file in
+repository <repo> under the specified org/project."
   (let ((parsed (ado-parse-src-link path)))
     (let-alist parsed
       (cond
-       (.line-number (concat "https://" org-azuredevops-host "/" org-azuredevops-organization "/_git/"
-                             .repo "?path=/" .path "&line="
+       (.line-number (concat "https://" org-azuredevops-host "/" .org "/_git/"
+                             .repo "?path=" (ado-src-escape-path .path) "&line="
                              .line-number "&lineEnd=" (or .line-end .line-number)
                              "&lineStartColumn=0&lineEndColumn=1000"))
-       (t (concat "https://" org-azuredevops-host "/" org-azuredevops-organization "/_git/"
-                  .repo "?path=/" .path))))))
+       (t (concat "https://" org-azuredevops-host "/" .org "/_git/"
+                  .repo "?path=" (ado-src-escape-path .path)))))))
 
 (defun ado-src-export (path description format)
   "Export an AzDevops src link PATH with DESCRIPTION to FORMAT."
